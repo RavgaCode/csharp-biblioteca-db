@@ -1,4 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using System.Data.SqlClient;
+
 Console.WriteLine("Hello, World!");
 
 
@@ -6,12 +8,16 @@ Biblioteca biblioteca = new Biblioteca();
 biblioteca.CreaClientiDefault();
 biblioteca.CreaDocumentiDefault();
 
+string stringaDiConnessione = "Data Source=localhost;Initial Catalog=db-biblioteca;Integrated Security=True";
+
+SqlConnection connessioneSql = new SqlConnection(stringaDiConnessione);
+
 bool programma = true;
 
 while (programma)
 {
     Console.WriteLine("Scegliere un'operazione:");
-    Console.WriteLine("1 - Registra un nuovo cliente");
+    Console.WriteLine("1 - Inserisci un nuovo documento");
     Console.WriteLine("2 - Ricerca documento");
     Console.WriteLine("3 - Effettua prestito");
     Console.WriteLine("4 - Ricerca prestiti");
@@ -22,10 +28,10 @@ while (programma)
     switch (rispostaUtente)
     {
         case 1:
-            biblioteca.RegistraCliente();
+            CreazioneNuovoLibro();
             break;
         case 2:
-            biblioteca.RicercaDocumento();
+            RicercaDocumento();
             break;
         case 3:
             biblioteca.EffettuaPrestito();
@@ -39,5 +45,93 @@ while (programma)
         default:
             Console.WriteLine("Digitare un'operazione valida");
             break;
+    }
+}
+
+
+void CreazioneNuovoLibro()
+{
+    Console.Write("Digita il codice libro: ");
+    string codiceLibro = Console.ReadLine();
+    Console.Write("Digita il titolo libro: ");
+    string titoloLibro = Console.ReadLine();
+    Console.Write("Digita l'anno del libro: ");
+    int annoLibro = Convert.ToInt32(Console.ReadLine());
+    Console.Write("Digita il settore del libro: ");
+    string settoreLibro = Console.ReadLine();
+    Console.Write("Digita lo stato libro (1: disponibile / 0: non disponibile) : ");
+    int statoLibro = Convert.ToInt32(Console.ReadLine());
+    Console.Write("Digita lo scaffale del libro: ");
+    int scaffaleLibro = Convert.ToInt32(Console.ReadLine());
+    Console.Write("Digita l'autore del libro: ");
+    string autoreLibro = Console.ReadLine();
+    Console.Write("Digita numero di pagine del libro: ");
+    int pagineLibro = Convert.ToInt32(Console.ReadLine());
+
+
+    try
+    {
+        connessioneSql.Open();
+        string insertQuery = "INSERT INTO documenti (codice,titolo,anno,settore,stato,scaffale,autore,tipologia,pagine) VALUES (@codice, @titolo, @anno, @settore, @stato, @scaffale, @autore, @tipologia, @pagine)";
+
+        SqlCommand insertCommand = new SqlCommand(insertQuery, connessioneSql);
+
+        insertCommand.Parameters.Add(new SqlParameter("@codice", codiceLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@titolo", titoloLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@anno", annoLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@settore", settoreLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@stato", statoLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@scaffale", scaffaleLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@autore", autoreLibro));
+        insertCommand.Parameters.Add(new SqlParameter("@tipologia", "libro"));
+        insertCommand.Parameters.Add(new SqlParameter("@pagine", pagineLibro));
+
+        int affectedRows = insertCommand.ExecuteNonQuery();
+
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+    }
+    finally
+    {
+        connessioneSql.Close();
+    }
+    return;
+}
+
+void RicercaDocumento()
+{
+    try
+    {
+        connessioneSql.Open();
+
+        Console.Write("Inserisci il titolo del documento da ricerca: ");
+        string titoloDaRicercare = Console.ReadLine();
+
+        string query = "SELECT * FROM documenti where titolo=@titolo";
+
+        SqlCommand cmd = new SqlCommand(query, connessioneSql);
+        cmd.Parameters.Add(new SqlParameter("@titolo", titoloDaRicercare));
+
+        SqlDataReader reader = cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            string codice = reader.GetString(1);
+            string titolo = reader.GetString(2);
+            bool stato = reader.GetBoolean(5);
+            string autore = reader.GetString(7);
+
+            Console.WriteLine(codice + titolo + stato + autore);
+        }
+    }
+    catch(Exception e)
+    {
+        Console.WriteLine(e.Message);
+    }
+    finally
+    {
+        connessioneSql.Close();
     }
 }
