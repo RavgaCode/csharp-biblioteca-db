@@ -34,7 +34,7 @@ while (programma)
             RicercaDocumento();
             break;
         case 3:
-            biblioteca.EffettuaPrestito();
+            EffettuaPrestito();
             break;
         case 4:
             biblioteca.RicercaPrestiti();
@@ -134,4 +134,77 @@ void RicercaDocumento()
     {
         connessioneSql.Close();
     }
+    return;
 }
+void EffettuaPrestito()
+{
+    int idDocumentoDaPrestare = 0;
+
+    //Ricerca Documento da prestare
+
+    try
+    {
+        connessioneSql.Open();
+
+        Console.Write("Inserisci il titolo del documento da ricerca: ");
+        string titoloDaRicercare = Console.ReadLine();
+
+        string query = "SELECT * FROM documenti where titolo=@titolo";
+
+        SqlCommand cmd = new SqlCommand(query, connessioneSql);
+        cmd.Parameters.Add(new SqlParameter("@titolo", titoloDaRicercare));
+
+        SqlDataReader reader = cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            idDocumentoDaPrestare = reader.GetInt32(0);
+            string codice = reader.GetString(1);
+            string titolo = reader.GetString(2);
+            bool stato = reader.GetBoolean(5);
+            string autore = reader.GetString(7);
+
+            Console.WriteLine("Documento trovato: " + codice + titolo + stato + autore);
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+    }
+    finally
+    {
+        connessioneSql.Close();
+    }
+
+    //Creazione Nuovo Prestito
+
+    Console.Write("Inserire data inizio prestito (dd/mm/yyyy) : ");
+    string dataInizio = Console.ReadLine();
+    Console.Write("Inserire data fine prestito (dd/mm/yyyy) : ");
+    string dataFine = Console.ReadLine();
+    Console.Write("Inserire nome cliente del prestito : ");
+    string nomeCliente = Console.ReadLine();
+
+    try
+    {
+        connessioneSql.Open();
+        string insertQuery = "INSERT INTO prestiti (data_inizio,data_fine,nome_cliente,documenti_id) VALUES (@data_inizio,@data_fine,@nome_cliente,@documenti_id)";
+
+        SqlCommand insertCommand = new SqlCommand(insertQuery, connessioneSql);
+
+        insertCommand.Parameters.Add(new SqlParameter("@data_inizio", dataInizio));
+        insertCommand.Parameters.Add(new SqlParameter("@data_fine", dataFine));
+        insertCommand.Parameters.Add(new SqlParameter("@nome_cliente", nomeCliente));
+        insertCommand.Parameters.Add(new SqlParameter("@documenti_id", idDocumentoDaPrestare));
+
+        int affectedRows = insertCommand.ExecuteNonQuery();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+    }
+    finally
+    {
+        connessioneSql.Close();
+    }
+ }
